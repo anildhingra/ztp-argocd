@@ -1,0 +1,108 @@
+# example-node1-bmh-secret & assisted-deployment-pull-secret need to be created under same namespace example-sno
+---
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "site2"
+  namespace: "site2"
+spec:
+  baseDomain: "example.com"
+  pullSecretRef:
+    name: "pullsecret-cluster-site2"
+  clusterImageSetNameRef: "acmopenshift4.12.25"
+  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDRQb+spDn5O3ER5gyuRJV3pE4/OA5cp4kJbTnHh7u6ipqdF47jPwH+bCT0k/+dn8x2UAyts9mR8Vqdb7/vMBgAyceBvXp4ku/leIivwheWI3cilzNtLUm21sUQfN07aGKvCiA1bYfv3xR92yTgxFSKuNUpLnKCWA015QUKmVJp+EmRe5GuEbr4NYQvJ4PHikpjWG0x+yXBhLrL0RvODYS6Sw8RlsBFbhJFeMPKPqQcJCRzGvVLWBuQiJyMiQzB/F/+fmlHswS9w6PlEScHuIdvX5bK8Eod2YFx1lMGNHQTSphCmrhJQ6yTVoW+YQyX8g2AGeDl34mRuhcT96r0JbikIsi+3X48kdON9dqz6TgeCAwxWl0pSnmLwlmB00X7dwEF7XnKESqBB7qZP86q821HYcK0n6Xvt5wnPUJXlkp/6M1WTUm2zJwAIuxp+Y0EMpEFWi+9VmOWk5usiGOKzRseHYyP1o39apoYmfPRO64AyyMHOuMYoNAVpvHH5dnm9ZE= m3@hpe-dl380gen10-02.hpe2.lab.eng.bos.redhat.com"
+  clusters:
+  - clusterName: "site2"
+    networkType: "OVNKubernetes"
+    # installConfigOverrides is a generic way of passing install-config
+    # parameters through the siteConfig.  The 'capabilities' field configures
+    # the composable openshift feature.  In this 'capabilities' setting, we
+    # remove all but the marketplace component from the optional set of
+    # components.
+    # Notes:
+    # - NodeTuning is needed for 4.13 and later, not for 4.12 and earlier
+    #installConfigOverrides:  "{\"capabilities\":{\"baselineCapabilitySet\": \"None\", \"additionalEnabledCapabilities\": [ \"marketplace\", \"NodeTuning\" ] }}"
+    # It is strongly recommended to include crun manifests as part of the additional install-time manifests for 4.13+.
+    # The crun manifests can be obtained from source-crs/optional-extra-manifest/ and added to the git repo ie.sno-extra-manifest.
+    # extraManifestPath: sno-extra-manifest
+    clusterLabels:
+      # These example cluster labels correspond to the bindingRules in the PolicyGenTemplate examples
+      #du-profile: "latest"
+      # These example cluster labels correspond to the bindingRules in the PolicyGenTemplate examples in ../policygentemplates:
+      # ../policygentemplates/common-ranGen.yaml will apply to all clusters with 'common: true'
+      #common: true
+      # ../policygentemplates/group-du-sno-ranGen.yaml will apply to all clusters with 'group-du-sno: ""'
+      #group-du-sno: ""
+      # ../policygentemplates/example-sno-site.yaml will apply to all clusters with 'sites: "example-sno"'
+      # Normally this should match or contain the cluster name so it only applies to a single cluster
+      #sites : "example-sno"
+    clusterNetwork:
+      - cidr: 10.128.0.0/14
+        hostPrefix: 23
+    machineNetwork:
+      - cidr: 192.168.30.0/24
+    serviceNetwork:
+      - 172.30.0.0/16
+        # additionalNTPSources:
+        #  - 1111:2222:3333:4444::2
+    # Initiates the cluster for workload partitioning. Setting specific reserved/isolated CPUSets is done via PolicyTemplate
+    # please see Workload Partitioning Feature for a complete guide.
+    #cpuPartitioningMode: AllNodes
+    # Optionally; This can be used to override the KlusterletAddonConfig that is created for this cluster:
+    #crTemplates:
+    #  KlusterletAddonConfig: "KlusterletAddonConfigOverride.yaml"
+    nodes:
+      - hostName: "site2"
+        role: "master"
+        # Optionally; This can be used to configure desired BIOS setting on a host:
+        #biosConfigRef:
+        #  filePath: "example-hw.profile"
+        bmcAddress: "http://192.168.111.1:8000/redfish/v1/Systems/937d9d9f-da69-4c0b-8390-4b1ebc431f29"
+        bmcCredentialsName:
+          name: "site2"
+        bootMACAddress: "00:83:a4:32:4b:3a"
+        # Use UEFISecureBoot to enable secure boot
+        bootMode: "UEFI"
+        rootDeviceHints:
+          deviceName: "/dev/sda"
+        # example of diskPartition below is used for image registry (check ImageRegistry.md for more details), but it's not limited to this use case
+#        diskPartition:
+#          - device: /dev/disk/by-id/wwn-0x11111000000asd123 # match rootDeviceHints
+#            partitions:
+#              - mount_point: /var/imageregistry
+#                size: 102500
+#                start: 344844
+        nodeNetwork:
+          interfaces:
+            - name: enp2s0
+              macAddress: "00:83:a4:32:4b:3a"
+          config:
+            interfaces:
+              - name: enp2s0
+                type: ethernet
+                state: up
+                ipv4:
+                  enabled: true
+                  address:
+                  - ip: 192.168.30.31
+                    prefix-length: 24
+                ipv6:
+                  enabled: false
+                  address:
+                  # For SNO sites with static IP addresses, the node-specific,
+                  # API and Ingress IPs should all be the same and configured on
+                  # the interface
+                  #- ip: 1111:2222:3333:4444::aaaa:1
+                  #  prefix-length: 64
+            dns-resolver:
+              config:
+                search:
+                - site2.example.com
+                server:
+                - 192.168.30.1
+            routes:
+              config:
+              - destination: 0.0.0.0/0
+                next-hop-interface: enp2s0
+                next-hop-address: 192.168.30.1
+                table-id: 254
