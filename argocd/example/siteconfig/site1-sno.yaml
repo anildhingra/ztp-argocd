@@ -1,28 +1,5 @@
 # example-node1-bmh-secret & assisted-deployment-pull-secret need to be created under same namespace example-sno
 ---
-kind: Secret
-apiVersion: v1
-metadata:
-  name: pullsecret-cluster-site1
-  namespace: site1
-  labels:
-    agent-install.openshift.io/watch: 'true'
-    cluster.open-cluster-management.io/backup: cluster
-data:
-  .dockerconfigjson: >-
-    ewoJImF1dGhzIjogewoJCSJyZWdpc3RyeS5hY20uZXhhbXBsZS5jb206NTAwMCI6IHsKCQkJImF1dGgiOiAiYVc1cGREcHlaV1JvWVhReE1qTT0iCgkJfQoJfQp9
-type: kubernetes.io/dockerconfigjson
-
-apiVersion: v1
-kind: Secret
-metadata:
-  name: site1
-  namespace: site1
-data:
-  username: YWRtaW4=
-  password: cGFzc3dvcmQ=
-type: Opaque
----
 apiVersion: ran.openshift.io/v1
 kind: SiteConfig
 metadata:
