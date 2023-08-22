@@ -3,5 +3,6 @@ kind: Kustomization
 
 generators:
 - site2-sno.yaml
+- site1-sno.yaml
   #- example-3node.yaml
   #- example-standard.yaml
