@@ -14,7 +14,7 @@ policyDefaults:
     labelSelector:
       common: "true"
       du-profile: "latest"
-  remediationAction: inform
+  remediationAction: enforce
   severity: low
   # standards: []
   namespaceSelector:
