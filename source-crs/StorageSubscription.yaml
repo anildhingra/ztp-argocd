@@ -8,7 +8,7 @@ metadata:
 spec:
   channel: "stable"
   name: local-storage-operator
-  source: redhat-operators-disconnected
+  source: my-operator-catalog
   sourceNamespace: openshift-marketplace
   installPlanApproval: Manual
 status:
