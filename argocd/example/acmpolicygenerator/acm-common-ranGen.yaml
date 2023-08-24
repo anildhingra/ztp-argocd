@@ -13,7 +13,7 @@ policyDefaults:
   placement:
     labelSelector:
       common: "true"
-      du-profile: "latest"
+      #      du-profile: "latest"
   remediationAction: enforce
   severity: low
   # standards: []
