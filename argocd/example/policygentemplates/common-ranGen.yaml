@@ -54,6 +54,7 @@ spec:
       spec:
         displayName: disconnected-redhat-operators
         image: registry.acm.example.com:5000/redhat/redhat-operator-index:v4.12
+        publisher: grpc
     # - fileName: AmqSubscriptionNS.yaml
     #   policyName: "subscriptions-policy"
     # - fileName: AmqSubscriptionOperGroup.yaml
