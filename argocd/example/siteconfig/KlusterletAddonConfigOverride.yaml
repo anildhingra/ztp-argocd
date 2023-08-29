@@ -20,7 +20,7 @@ spec:
   policyController:
     enabled: true
   searchCollector:
-    enabled: false
+    enabled: true
 
 # Note: This override replaces the entire KlusterletAddonConfig, and so must be
 # provided in full. The templated portions will be substituted to match the
