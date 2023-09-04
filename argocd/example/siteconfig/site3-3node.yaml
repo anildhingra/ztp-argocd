@@ -1,0 +1,206 @@
+# example-node[123]-bmh-secret & assisted-deployment-pull-secret need to be created under same namespace example-3node
+---
+apiVersion: ran.openshift.io/v1
+kind: SiteConfig
+metadata:
+  name: "site3"
+  namespace: "site3"
+spec:
+  baseDomain: "example.com"
+  pullSecretRef:
+    name: "pullsecret-site3"
+  clusterImageSetNameRef: "acmopenshift4.12.25"
+  sshPublicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDRQb+spDn5O3ER5gyuRJV3pE4/OA5cp4kJbTnHh7u6ipqdF47jPwH+bCT0k/+dn8x2UAyts9mR8Vqdb7/vMBgAyceBvXp4ku/leIivwheWI3cilzNtLUm21sUQfN07aGKvCiA1bYfv3xR92yTgxFSKuNUpLnKCWA015QUKmVJp+EmRe5GuEbr4NYQvJ4PHikpjWG0x+yXBhLrL0RvODYS6Sw8RlsBFbhJFeMPKPqQcJCRzGvVLWBuQiJyMiQzB/F/+fmlHswS9w6PlEScHuIdvX5bK8Eod2YFx1lMGNHQTSphCmrhJQ6yTVoW+YQyX8g2AGeDl34mRuhcT96r0JbikIsi+3X48kdON9dqz6TgeCAwxWl0pSnmLwlmB00X7dwEF7XnKESqBB7qZP86q821HYcK0n6Xvt5wnPUJXlkp/6M1WTUm2zJwAIuxp+Y0EMpEFWi+9VmOWk5usiGOKzRseHYyP1o39apoYmfPRO64AyyMHOuMYoNAVpvHH5dnm9ZE= m3@hpe-dl380gen10-02.hpe2.lab.eng.bos.redhat.com"
+  clusters:
+  - clusterName: "site3"
+    networkType: "OVNKubernetes"
+    clusterLabels:
+      # These example cluster labels correspond to the bindingRules in the PolicyGenTemplate examples in ../policygentemplates:
+      # ../policygentemplates/common-ranGen.yaml will apply to all clusters with 'common: true'
+      common: true
+      # ../policygentemplates/group-du-3node-ranGen.yaml will apply to all clusters with 'group-du-3node: ""'
+      #group-du-3node: ""
+      # ../policygentemplates/example-multinode-site.yaml will apply to all clusters with 'sites: "example-multinode"'
+      # Normally this should match or contain the cluster name so it only applies to a single cluster
+      #sites : "example-multinode"
+    clusterNetwork:
+      - cidr: 10.128.0.0/14
+        hostPrefix: 23
+    # For 3-node and standard clusters with static IPs, the API and Ingress IPs must be configured here
+    apiVIP: 192.168.40.5
+    ingressVIP: 192.168.40.4
+    machineNetwork:
+      - cidr: 192.168.40.0/24
+    serviceNetwork:
+      - 172.30.0.0/16
+   # additionalNTPSources:
+    #  - 1111:2222:3333:4444::2
+    # Optionally; This can be used to override the KlusterletAddonConfig that is created for this cluster:
+    #crTemplates:
+    #  KlusterletAddonConfig: "KlusterletAddonConfigOverride.yaml"
+    # Optionally; This can be used to to configure desired BIOS setting on all nodes in this cluster:
+    #biosConfigRef:
+    #  filePath: "example-hw.profile"
+    nodes:
+      - hostName: "node1"
+        role: "master"
+        # Optionally; This can be used to configure desired BIOS setting on a host:
+        #biosConfigRef:
+        #  filePath: "example-hw.profile"
+        bmcAddress: "redfish-virtualmedia+http://192.168.111.1:8000/redfish/v1/Systems/cfcaebce-2e18-4612-a982-8024f35432be"
+        bmcCredentialsName:
+          name: "site3"
+        bootMACAddress: "00:83:a4:32:4b:3e"
+        # Use UEFISecureBoot to enable secure boot
+        bootMode: "UEFI"
+        rootDeviceHints:
+          deviceName: "/dev/sda"
+        # example of diskPartition below is used for image registry (check ImageRegistry.md for more details), but it's not limited to this use case
+#        diskPartition:
+#          - device: /dev/disk/by-id/wwn-0x11111000000asd123 # match rootDeviceHints
+#            partitions:
+#              - mount_point: /var/imageregistry
+#                size: 102500
+#                start: 344844
+        nodeNetwork:
+          interfaces:
+            - name: enp2s0
+              macAddress: "00:83:a4:32:4b:3e"
+          config:
+            interfaces:
+              - name: enp2s0
+                type: ethernet
+                state: up
+                ipv4:
+                  enabled: true
+                  address:
+                  - ip: 192.168.40.28
+                    prefix-length: 24
+                ipv6:
+                  enabled: false
+                  address:
+                  # For SNO sites with static IP addresses, the node-specific,
+                  # API and Ingress IPs should all be the same and configured on
+                  # the interface
+                  #- ip: 1111:2222:3333:4444::aaaa:1
+                  #  prefix-length: 64
+            dns-resolver:
+              config:
+                search:
+                - site3.example.com
+                server:
+                - 192.168.40.1
+            routes:
+              config:
+              - destination: 0.0.0.0/0
+                next-hop-interface: enp2s0
+                next-hop-address: 192.168.40.1
+                table-id: 254
+      - hostName: "node2"
+        role: "master"
+        # Optionally; This can be used to configure desired BIOS setting on a host:
+        #biosConfigRef:
+        #  filePath: "example-hw.profile"
+        bmcAddress: "redfish-virtualmedia+http://192.168.111.1:8000/redfish/v1/Systems/66d3bbc0-f9c3-48bc-8ae1-ba2f7f77363b"
+        bmcCredentialsName:
+          name: "site3"
+        bootMACAddress: "00:83:a4:32:4b:42"
+        # Use UEFISecureBoot to enable secure boot
+        bootMode: "UEFI"
+        rootDeviceHints:
+          deviceName: "/dev/sda"
+        # example of diskPartition below is used for image registry (check ImageRegistry.md for more details), but it's not limited to this use case
+#        diskPartition:
+#          - device: /dev/disk/by-id/wwn-0x11111000000asd123 # match rootDeviceHints
+#            partitions:
+#              - mount_point: /var/imageregistry
+#                size: 102500
+#                start: 344844
+        nodeNetwork:
+          interfaces:
+            - name: enp2s0
+              macAddress: "00:83:a4:32:4b:42"
+          config:
+            interfaces:
+              - name: enp2s0
+                type: ethernet
+                state: up
+                ipv4:
+                  enabled: true
+                  address:
+                  - ip: 192.168.40.29
+                    prefix-length: 24
+                ipv6:
+                  enabled: false
+                  address:
+                  # For SNO sites with static IP addresses, the node-specific,
+                  # API and Ingress IPs should all be the same and configured on
+                  # the interface
+                  #- ip: 1111:2222:3333:4444::aaaa:1
+                  #  prefix-length: 64
+            dns-resolver:
+              config:
+                search:
+                - site3.example.com
+                server:
+                - 192.168.40.1
+            routes:
+              config:
+              - destination: 0.0.0.0/0
+                next-hop-interface: enp2s0
+                next-hop-address: 192.168.40.1
+                table-id: 254
+      - hostName: "node3"
+        role: "master"
+        # Optionally; This can be used to configure desired BIOS setting on a host:
+        #biosConfigRef:
+        #  filePath: "example-hw.profile"
+        bmcAddress: "redfish-virtualmedia+http://192.168.111.1:8000/redfish/v1/Systems/8c449c45-34d4-4652-95cb-ec66db163e6a"
+        bmcCredentialsName:
+          name: "site3"
+        bootMACAddress: "00:83:a4:32:4b:46"
+        # Use UEFISecureBoot to enable secure boot
+        bootMode: "UEFI"
+        rootDeviceHints:
+          deviceName: "/dev/sda"
+        # example of diskPartition below is used for image registry (check ImageRegistry.md for more details), but it's not limited to this use case
+#        diskPartition:
+#          - device: /dev/disk/by-id/wwn-0x11111000000asd123 # match rootDeviceHints
+#            partitions:
+#              - mount_point: /var/imageregistry
+#                size: 102500
+#                start: 344844
+        nodeNetwork:
+          interfaces:
+            - name: enp2s0
+              macAddress: "00:83:a4:32:4b:46"
+          config:
+            interfaces:
+              - name: enp2s0
+                type: ethernet
+                state: up
+                ipv4:
+                  enabled: true
+                  address:
+                  - ip: 192.168.40.30
+                    prefix-length: 24
+                ipv6:
+                  enabled: false
+                  address:
+                  # For SNO sites with static IP addresses, the node-specific,
+                  # API and Ingress IPs should all be the same and configured on
+                  # the interface
+                  #- ip: 1111:2222:3333:4444::aaaa:1
+                  #  prefix-length: 64
+            dns-resolver:
+              config:
+                search:
+                - site3.example.com
+                server:
+                - 192.168.40.1
+            routes:
+              config:
+              - destination: 0.0.0.0/0
+                next-hop-interface: enp2s0
+                next-hop-address: 192.168.40.1
+                table-id: 254
